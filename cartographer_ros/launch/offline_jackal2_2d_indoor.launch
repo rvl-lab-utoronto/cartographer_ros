@@ -17,23 +17,24 @@
 <launch>
   <arg name="bag_filenames"/>
   <arg name="no_rviz" default="false"/>
-  <arg name="rviz_config" default="$(find cartographer_ros)/configuration_files/demo_3d.rviz"/>
+  <arg name="rviz_config" default="$(find cartographer_ros)/configuration_files/demo_2d.rviz"/>
   <arg name="configuration_directory" default="$(find cartographer_ros)/configuration_files"/>
-  <arg name="configuration_basenames" default="jackal2_OFFLINE.lua"/>
+  <arg name="configuration_basenames" default="jackal2_2d_indoor.lua"/>
   <arg name="urdf_filenames" default="$(find cartographer_ros)/urdf/backpack_3d.urdf"/>
   <arg name="launch_prefix" default=""/>
 
+  <remap from="points2" to="ouster/points" />
   <remap from="points2_1" to="ouster/points" />
   <remap from="points2_2" to="ouster/points2" />
   <remap from="scan_1" to="ouster/scan" />
   <remap from="scan_2" to="ouster/scan2" />
   <!-- <remap from="imu" to="imu/data" /> -->
-  <remap from="imu" to="imu_2d" />
-  <!-- <remap from="imu" to="ouster/imu" /> -->
+  <!-- <remap from="imu" to="imu_2d" /> -->
+  <remap from="imu" to="ouster/imu" />
   <!-- <remap from="odom" to="odometry/filtered" /> -->
   <remap from="odom" to="odom_2d" />
 
-  <include file="$(find cartographer_ros)/launch/offline_node.launch">
+  <include file="$(find cartographer_ros)/launch/offline_node_indoor.launch">
     <arg name="bag_filenames" value="$(arg bag_filenames)"/>
     <arg name="no_rviz" value="$(arg no_rviz)"/>
     <arg name="rviz_config" value="$(arg rviz_config)"/>
@@ -42,7 +43,4 @@
     <arg name="urdf_filenames" value="$(arg urdf_filenames)"/>
     <arg name="launch_prefix" value="$(arg launch_prefix)"/>
   </include>
-
-  <!-- <node name="odom_3d_to_2d" pkg="slam_jackal" type="odom_2d.py" output="screen"/> -->
-
 </launch>

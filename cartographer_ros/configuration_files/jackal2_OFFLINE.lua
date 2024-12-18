@@ -23,7 +23,7 @@ options = {
   published_frame = "base_link", -- The ROS frame ID to use as the child frame for publishing poses.
                             -- For example “odom” if an “odom” frame is supplied by a different part of the system.
   odom_frame = "odom",
-  provide_odom_frame = false, -- publishing a tf between odom_frame and published_frame
+  provide_odom_frame = true, -- publishing a tf between odom_frame and published_frame
                              -- setting this to true when published_frame is also odom gives errors.
   publish_frame_projected_to_2d = true, -- the published pose data is strictly in 2D (x, y, yaw) if this is set to true.
                                         -- This prevents potentially unwanted out-of-plane poses in 2D mode that can occur due to the pose extrapolation step
@@ -37,7 +37,7 @@ options = {
   use_landmarks = false,
   publish_tracked_pose=true,
   publish_to_tf = true, -- publish a tf between map_frame and published_frame
-  num_laser_scans = 1, -- provide laser scan topic in launch file
+  num_laser_scans = 0, -- provide laser scan topic in launch file
   num_multi_echo_laser_scans = 0,
   num_subdivisions_per_laser_scan = 1,
   num_point_clouds = 2, -- provide pointcloud topic in launch file
@@ -48,26 +48,26 @@ options = {
   rangefinder_sampling_ratio = 1.,
   odometry_sampling_ratio = 0.5,
   fixed_frame_pose_sampling_ratio = 1.,
-  imu_sampling_ratio = 0.05,
+  imu_sampling_ratio = 0.5,
   landmarks_sampling_ratio = 1.,
 }
 
-TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 1
-TRAJECTORY_BUILDER_3D.use_online_correlative_scan_matching = false
+TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 5
+TRAJECTORY_BUILDER_3D.use_online_correlative_scan_matching = true
 
 MAP_BUILDER.use_trajectory_builder_3d = true
-MAP_BUILDER.num_background_threads = 12
-POSE_GRAPH.optimization_problem.huber_scale = 5e-1
+MAP_BUILDER.num_background_threads = 30
+POSE_GRAPH.optimization_problem.huber_scale = 5e2
 POSE_GRAPH.optimize_every_n_nodes = 1
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.5
-POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 100
-POSE_GRAPH.constraint_builder.min_score = 0.8
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.85
+POSE_GRAPH.constraint_builder.sampling_ratio = 0.25
+POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 1000
+POSE_GRAPH.constraint_builder.min_score = 0.62
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.66
 
 POSE_GRAPH.optimization_problem.log_solver_summary = false
 POSE_GRAPH.log_residual_histograms = false
 
-POSE_GRAPH.optimization_problem.fix_z_in_3d = false
+POSE_GRAPH.optimization_problem.fix_z_in_3d = true
 -- POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.only_optimize_yaw = true
 
 -- TRAJECTORY_BUILDER_3D.use_intensities = true

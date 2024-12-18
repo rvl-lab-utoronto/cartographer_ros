@@ -37,7 +37,7 @@ options = {
         miss_probability = 0.49,
       },
       filestem = "map",
-      resolution = 0.25,
+      resolution = 0.05,
     }
   }
 }

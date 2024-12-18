@@ -23,10 +23,15 @@
   <arg name="urdf_filenames" default="$(find cartographer_ros)/urdf/backpack_3d.urdf"/>
   <arg name="launch_prefix" default=""/>
 
-  <remap from="points2" to="ouster/points" />
-  <remap from="scan" to="ouster/scan" />
-  <remap from="imu" to="imu/data" />
-  <remap from="odom" to="odometry/filtered" />
+  <remap from="points2_1" to="ouster/points" />
+  <remap from="points2_2" to="ouster/points2" />
+  <remap from="scan_1" to="ouster/scan" />
+  <remap from="scan_2" to="ouster/scan2" />
+  <!-- <remap from="imu" to="imu/data" /> -->
+  <!-- <remap from="imu" to="imu_2d" /> -->
+  <remap from="imu" to="ouster/imu" />
+  <!-- <remap from="odom" to="odometry/filtered" /> -->
+  <remap from="odom" to="odom_2d" />
 
   <include file="$(find cartographer_ros)/launch/offline_node.launch">
     <arg name="bag_filenames" value="$(arg bag_filenames)"/>

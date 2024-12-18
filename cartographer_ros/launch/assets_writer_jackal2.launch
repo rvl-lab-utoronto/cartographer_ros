@@ -15,6 +15,13 @@
 -->
 
 <launch>
+
+  <arg name="bag_filenames"/>
+  <param name="bag_filenames" value="$(arg bag_filenames)" />
+
+  <arg name="pose_graph_filename"/>
+  <param name="pose_graph_filename" value="$(arg pose_graph_filename)" />
+
   <node name="cartographer_assets_writer" pkg="cartographer_ros" required="true"
       type="cartographer_assets_writer" args="
           -configuration_directory $(find cartographer_ros)/configuration_files
