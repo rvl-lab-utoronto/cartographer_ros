@@ -19,7 +19,8 @@ options = {
   map_builder = MAP_BUILDER,
   trajectory_builder = TRAJECTORY_BUILDER,
   map_frame = "map",
-  tracking_frame = "base_link",
+  tracking_frame = "os_imu",
+  -- tracking_frame = "base_link",
   -- tracking_frame = "imu_link",
   published_frame = "base_link",-- The ROS frame ID to use as the child frame for publishing poses.
                                 -- For example “odom” if an “odom” frame is supplied by a different part of the system.
@@ -60,8 +61,9 @@ POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_thread
 POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 30
 POSE_GRAPH.optimize_every_n_nodes = 1
 TRAJECTORY_BUILDER_2D.use_imu_data = false -- false to disable the use of IMU data
--- TRAJECTORY_BUILDER_2D.min_z = -0.15
-TRAJECTORY_BUILDER_2D.min_z = 0.405
+TRAJECTORY_BUILDER_2D.min_z = -0.15
+-- TRAJECTORY_BUILDER_2D.min_z = 0.405
+
 -- TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
 
 POSE_GRAPH.optimization_problem.log_solver_summary = true
