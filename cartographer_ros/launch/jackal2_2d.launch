@@ -27,7 +27,7 @@
           -configuration_directory $(find cartographer_ros)/configuration_files
           -configuration_basename jackal2_2d.lua"
       output="screen">
-    <!-- <remap from="points2" to="ouster/points" /> -->
+    <remap from="points2" to="ouster/points" />
     <!-- <remap from="scan" to="ouster/scan" /> -->
     <!-- <remap from="imu" to="imu/data" />   -->
     <!-- <remap from="odom" to="odometry/filtered" /> -->
@@ -40,17 +40,19 @@
     <!-- <remap from="odom" to="odom_2d" /> -->
     <!-- This remap is only for analysis against other odom sources like vicon -->
     <!--  <remap from="tf" to="tf_cart"/> -->
-    <remap from="points2_1" to="ouster/points" />
-    <remap from="points2_2" to="ouster/points2" />
-    <remap from="scan_1" to="ouster/scan" />
-    <remap from="scan_2" to="ouster/scan2" />
+    <!-- <remap from="points2_1" to="ouster/points" /> -->
+    <!-- <remap from="points2_2" to="ouster/points2" /> -->
+    <!-- <remap from="scan_1" to="ouster/scan" /> -->
+    <!-- <remap from="scan_2" to="ouster/scan2" /> -->
     <!-- <remap from="points2" to="ouster/points" />
     <remap from="scan" to="ouster/scan" /> -->
     <!-- <remap from="imu" to="imu/data" /> -->
     <!-- <remap from="imu" to="imu_2d" /> -->
     <remap from="imu" to="ouster/imu" />
     <!-- <remap from="odom" to="odometry/filtered" /> -->
-    <remap from="odom" to="odom_2d" />
+    <!-- <remap from="odom" to="odom_2d" /> -->
+    <remap from="odom" to="/jackal_velocity_controller/odom" />
+
 
     <!-- This remap is only for analysis against other odom sources like vicon -->
     <!-- <remap from="tf" to="tf_cart"/> -->
