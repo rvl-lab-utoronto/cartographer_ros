@@ -35,12 +35,12 @@ POSE_GRAPH.global_sampling_ratio = 0.0002 -- default 0.003
 POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 12
 -- POSE_GRAPH.constraint_builder.ceres_scan_matcher.rotation_weight = 4e3
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 1.0
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(3.)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(4.)
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.branch_and_bound_depth = 15
 POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 12
 POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.ceres_solver_options.num_threads = 12
 POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 10
-POSE_GRAPH.global_constraint_search_after_n_seconds = 30
+POSE_GRAPH.global_constraint_search_after_n_seconds = 10.0
 
 
 MAP_BUILDER.num_background_threads = 6
@@ -49,7 +49,7 @@ MAP_BUILDER.num_background_threads = 6
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 10
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 6
 TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.solver_options.num_threads = 6
-TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.15
+TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.10
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 30
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_range = 20
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 5.0

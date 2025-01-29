@@ -39,10 +39,12 @@
     <!-- <remap from="points2" to="ouster/points" />
     <remap from="scan" to="ouster/scan" /> -->
     <!-- <remap from="imu" to="imu/data" /> -->
+    <!-- <remap from="imu" to="imu_ordered" /> -->
     <!-- <remap from="imu" to="imu_2d" /> -->
     <remap from="imu" to="ouster/imu" />
     <!-- <remap from="odom" to="odometry/filtered" /> -->
     <remap from="odom" to="odom_2d" />
+    <!-- <remap from="odom" to="/jackal_velocity_controller/odom" /> -->
   </node>
 
   <node name="set_start_pose" pkg="slam_jackal" type="start_pose_cartographer.py" output="screen">

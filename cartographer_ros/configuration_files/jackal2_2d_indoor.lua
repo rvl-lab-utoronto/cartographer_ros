@@ -66,8 +66,12 @@ TRAJECTORY_BUILDER_2D.min_z = -0.15
 POSE_GRAPH.optimization_problem.log_solver_summary = true
 POSE_GRAPH.overlapping_submaps_trimmer_2d = {
   fresh_submaps_count = 2,
-  min_covered_area = 9,
-  min_added_submaps_count = 40,
+  min_covered_area = 10,
+  min_added_submaps_count = 3,
+}
+
+TRAJECTORY_BUILDER.pure_localization_trimmer = {
+  max_submaps_to_keep = 2,
 }
 
 return options
