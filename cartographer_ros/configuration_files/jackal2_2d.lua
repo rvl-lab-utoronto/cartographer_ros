@@ -23,7 +23,7 @@ options = {
   -- tracking_frame = "base_link",
   -- tracking_frame = "imu_link",
   tracking_frame = "os_imu",
-  -- published_frame = "base_link",-- The ROS frame ID to use as the child frame for publishing poses.
+  published_frame = "base_link",-- The ROS frame ID to use as the child frame for publishing poses.
                                 -- For example “odom” if an “odom” frame is supplied by a different part of the system.
   odom_frame = "odom",
   provide_odom_frame = true, -- publishing a tf between odom_frame and published_frame
@@ -62,7 +62,7 @@ POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_thread
 POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 30
 POSE_GRAPH.optimize_every_n_nodes = 1
 TRAJECTORY_BUILDER_2D.use_imu_data = true -- false to disable the use of IMU data
-TRAJECTORY_BUILDER_2D.min_z = -0.15
+TRAJECTORY_BUILDER_2D.min_z = -0.50
 -- TRAJECTORY_BUILDER_2D.min_z = 0.405
 
 -- TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true

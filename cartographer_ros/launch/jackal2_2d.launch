@@ -25,7 +25,7 @@
   <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
           -configuration_directory $(find cartographer_ros)/configuration_files
-          -configuration_basename jackal2_2d_liveslam_outdoor.lua"
+          -configuration_basename jackal2_2d_liveslam.lua"
       output="screen">
     <!-- <remap from="points2" to="ouster/points" /> -->
     <!-- <remap from="scan" to="ouster/scan" /> -->
