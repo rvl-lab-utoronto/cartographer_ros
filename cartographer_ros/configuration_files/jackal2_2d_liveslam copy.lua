@@ -24,7 +24,7 @@ options = {
   published_frame = "base_link",-- The ROS frame ID to use as the child frame for publishing poses.
                                 -- For example “odom” if an “odom” frame is supplied by a different part of the system.
   odom_frame = "odom",
-  provide_odom_frame = false, -- publishing a tf between odom_frame and published_frame
+  provide_odom_frame = true, -- publishing a tf between odom_frame and published_frame
                              -- setting this to true when published_frame is also odom gives errors.
   publish_frame_projected_to_2d = true, -- the published pose data is strictly in 2D (x, y, yaw) if this is set to true.
                                          -- This prevents potentially unwanted out-of-plane poses in 2D mode that can occur due to the pose extrapolation step
@@ -61,7 +61,6 @@ POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 6
 POSE_GRAPH.optimize_every_n_nodes = 1
 TRAJECTORY_BUILDER_2D.use_imu_data = true -- false to disable the use of IMU data
 TRAJECTORY_BUILDER_2D.min_z = -0.15
-TRAJECTORY_BUILDER_2D.max_z = 1.9
 -- TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
 
 -- TO GO LIVE:
@@ -93,7 +92,7 @@ TRAJECTORY_BUILDER_2D.max_range = 30.0
 TRAJECTORY_BUILDER_2D.submaps.num_range_data = 40
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.1
 
-TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.25
+TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.02
 
 -- END TO GO LIVE
 
