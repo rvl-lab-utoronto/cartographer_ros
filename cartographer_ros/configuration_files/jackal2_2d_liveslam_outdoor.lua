@@ -76,7 +76,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.branch_and_bound_dep
 POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 12
 POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.ceres_solver_options.num_threads = 12
 POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 10
-POSE_GRAPH.global_constraint_search_after_n_seconds = 10.0
+POSE_GRAPH.global_constraint_search_after_n_seconds = 15.0
 
 MAP_BUILDER.num_background_threads = 6
 
@@ -84,12 +84,24 @@ MAP_BUILDER.num_background_threads = 6
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 10
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 6
 TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.solver_options.num_threads = 6
-TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.10
+-- calculated from measurements from rosbag in Munich.
+TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.gravity_constant = 9.927842459878196
+
+-- TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.pose_translation_weight = 1.e5
+-- TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.pose_rotation_weight = 1.e2
+TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.odometry_rotation_weight = 0.0
+TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.imu_rotation_weight = 1e10
+TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.imu_acceleration_weight = 1.
+
+POSE_GRAPH.optimization_problem.odometry_rotation_weight = 0.0
+POSE_GRAPH.optimization_problem.local_slam_pose_translation_weight = 1e2
+
+TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.25
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 30
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_range = 20
-TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 5.0
+TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 15.0
 TRAJECTORY_BUILDER_2D.max_range = 30.0
-TRAJECTORY_BUILDER_2D.submaps.num_range_data = 40
+TRAJECTORY_BUILDER_2D.submaps.num_range_data = 30
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.1
 
 TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.25
@@ -97,7 +109,7 @@ TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.25
 -- END TO GO LIVE
 
 
-POSE_GRAPH.optimization_problem.log_solver_summary = true
+-- POSE_GRAPH.optimization_problem.log_solver_summary = true
 POSE_GRAPH.overlapping_submaps_trimmer_2d = {
   fresh_submaps_count = 2,
   min_covered_area = 10,
@@ -105,7 +117,7 @@ POSE_GRAPH.overlapping_submaps_trimmer_2d = {
 }
 
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
-  max_submaps_to_keep = 2,
+  max_submaps_to_keep = 5,
 }
 
 return options
