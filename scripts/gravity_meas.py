@@ -18,6 +18,7 @@ def process_imu_data(bag_file):
         # Convert to numpy arrays
         linear_accelerations = np.array(linear_accelerations)
         angular_velocities = np.array(angular_velocities)
+        angular_vel_avg = angular_velocities.mean(axis=0)
 
         # Calculate covariance matrix of linear accelerations
         calculated_acc_covariances = np.cov(linear_accelerations, rowvar=False)
@@ -32,10 +33,11 @@ def process_imu_data(bag_file):
         gravity_constant_estimate = np.linalg.norm(gravity_estimates)
 
         return (calculated_acc_covariances, calculated_angular_covariances,
-                gravity_estimates, gravity_constant_estimate)
+                gravity_estimates, gravity_constant_estimate, angular_vel_avg)
 
-bag_file = '/home/sepehr/Downloads/ouster_imu_robot_stationary_2025-04-30-08-58-17.bag'
-(acc_covariances, angular_covariances, gravity_estimates, gravity_constant_estimate) = process_imu_data(bag_file)
+# bag_file = '/home/sepehr/Downloads/ouster_imu_robot_stationary_2025-04-30-08-58-17.bag'
+bag_file = '/home/sepehr/Downloads/UofT_ouster_imu_robot_stationary_2025-05-26-12-32-51.bag'
+(acc_covariances, angular_covariances, gravity_estimates, gravity_constant_estimate, angular_vel_avg) = process_imu_data(bag_file)
 
 print("Calculated Linear Acceleration Covariance Matrix:")
 print(acc_covariances)
@@ -45,3 +47,6 @@ print("\nGravity Estimates (x, y, z):")
 print(gravity_estimates)
 print("\nGravity Constant Estimate:")
 print(gravity_constant_estimate)
+
+print("\nAngular vel bias:")
+print(angular_vel_avg)
