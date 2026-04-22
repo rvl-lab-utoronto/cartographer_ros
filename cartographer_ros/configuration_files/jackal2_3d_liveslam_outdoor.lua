@@ -51,25 +51,28 @@ options = {
   landmarks_sampling_ratio = 1.,
 }
 
-MAP_BUILDER.use_trajectory_builder_2d = true
+MAP_BUILDER.use_trajectory_builder_2d = false
+MAP_BUILDER.use_trajectory_builder_3d = true
 MAP_BUILDER.num_background_threads = 6
 
 
 POSE_GRAPH.optimize_every_n_nodes = 1
--- TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
+TRAJECTORY_BUILDER_3D.use_online_correlative_scan_matching = false
 
 -- TO GO LIVE:
 POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 12
 POSE_GRAPH.optimize_every_n_nodes = 1
 POSE_GRAPH.global_sampling_ratio = 0.0002 -- default 0.003
 -- POSE_GRAPH.constraint_builder.ceres_scan_matcher.rotation_weight = 4e3
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 1.0
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(4.)
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.branch_and_bound_depth = 15
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_xy_search_window = 1.0
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_z_search_window = 0.5
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(4.)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.branch_and_bound_depth = 8
 POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 12
 POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.ceres_solver_options.num_threads = 12
 POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 10
 POSE_GRAPH.global_constraint_search_after_n_seconds = 15.0
+POSE_GRAPH.optimization_problem.fix_z_in_3d = true
 -- TORONTO WEIGHTS START
 POSE_GRAPH.optimization_problem.odometry_rotation_weight = 0.0
 POSE_GRAPH.optimization_problem.odometry_translation_weight = 0.0
@@ -83,44 +86,44 @@ POSE_GRAPH.optimization_problem.rotation_weight = 0.    -- Default is typically 
 
 -- in order to run real-time? change these from the offline (default) settings
 
-TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
-TRAJECTORY_BUILDER_2D.use_imu_data = true -- false to disable the use of IMU data
-TRAJECTORY_BUILDER_2D.min_z = -2.75
-TRAJECTORY_BUILDER_2D.max_z = 1.75
+TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 1
+TRAJECTORY_BUILDER_3D.min_range = 0.5
+TRAJECTORY_BUILDER_3D.max_range = 200.0
+TRAJECTORY_BUILDER_3D.use_intensities = false
 
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 10
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 12
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 3. -- Increase (default is usually 1)
+TRAJECTORY_BUILDER_3D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 10
+TRAJECTORY_BUILDER_3D.ceres_scan_matcher.ceres_solver_options.num_threads = 12
+TRAJECTORY_BUILDER_3D.ceres_scan_matcher.occupied_space_weight_0 = 3. -- High res
+TRAJECTORY_BUILDER_3D.ceres_scan_matcher.occupied_space_weight_1 = 6. -- Low res
 
 
 -- calculated from measurements from rosbag in Munich.
 
-TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.25
-TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 30
-TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_range = 200
-TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 15.0
-TRAJECTORY_BUILDER_2D.max_range = 200.0
-TRAJECTORY_BUILDER_2D.submaps.num_range_data = 30
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.1
+TRAJECTORY_BUILDER_3D.voxel_filter_size = 0.15
+TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.min_num_points = 150
+TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.max_range = 200.0
+TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.max_length = 2.0
+TRAJECTORY_BUILDER_3D.low_resolution_adaptive_voxel_filter.min_num_points = 200
+TRAJECTORY_BUILDER_3D.low_resolution_adaptive_voxel_filter.max_range = 200.0
+TRAJECTORY_BUILDER_3D.low_resolution_adaptive_voxel_filter.max_length = 4.0
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 30
+TRAJECTORY_BUILDER_3D.real_time_correlative_scan_matcher.linear_search_window = 0.1
 
-TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.solver_options.num_threads = 6
-TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.gravity_constant = 9.81
-TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.odometry_rotation_weight = 0.0
-TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.odometry_translation_weight = 1.0
-TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.imu_rotation_weight = 5.0
-TRAJECTORY_BUILDER_2D.pose_extrapolator.imu_based.imu_acceleration_weight = 1.0
+TRAJECTORY_BUILDER_3D.pose_extrapolator.use_imu_based = true
+TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.solver_options.num_threads = 6
+TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.gravity_constant = 9.81
+TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.odometry_rotation_weight = 0.0
+TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.odometry_translation_weight = 1.0
+TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.imu_rotation_weight = 5.0
+TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.imu_acceleration_weight = 1.0
 
-TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.25
+TRAJECTORY_BUILDER_3D.submaps.high_resolution = 0.10
+TRAJECTORY_BUILDER_3D.submaps.low_resolution = 0.45
 
 -- END TO GO LIVE
 
 
 -- POSE_GRAPH.optimization_problem.log_solver_summary = true
-POSE_GRAPH.overlapping_submaps_trimmer_2d = {
-  fresh_submaps_count = 2,
-  min_covered_area = 10,
-  min_added_submaps_count = 3,
-}
 
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
