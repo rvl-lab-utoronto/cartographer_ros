@@ -58,24 +58,21 @@ MAP_BUILDER.num_background_threads = 6
 -- TO GO LIVE:
 -- Every-node optimization minimizes drift quickly but jitters map/odom as constraints
 -- get re-solved. Try 2–5 if idle pose looks too noisy; increase if global drift worsens.
-POSE_GRAPH.optimize_every_n_nodes = 3
+POSE_GRAPH.optimize_every_n_nodes = 1
 -- POSE_GRAPH.global_constraint_search_after_n_seconds = .0
 
 -- POSE_GRAPH.optimization_problem
-POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 6
+POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 4
 POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 10
 -- TORONTO WEIGHTS START
 POSE_GRAPH.optimization_problem.odometry_rotation_weight = 0.0
 POSE_GRAPH.optimization_problem.odometry_translation_weight = 0.0
-POSE_GRAPH.optimization_problem.local_slam_pose_translation_weight = 1e5
-POSE_GRAPH.optimization_problem.local_slam_pose_rotation_weight = 1e2
-POSE_GRAPH.optimization_problem.acceleration_weight = 0. -- Default is typically higher
-POSE_GRAPH.optimization_problem.rotation_weight = 0.    -- Default is typically higher
+POSE_GRAPH.optimization_problem.fix_z_in_3d = true
 -- TORONTO WEIGHTS END
 -- POSE_GRAPH.optimization_problem.log_solver_summary = true
 
 -- POSE_GRAPH.constraint_builder
-POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 12
+POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 4
 POSE_GRAPH.global_constraint_search_after_n_seconds = 15.0
 
 
@@ -87,32 +84,30 @@ TRAJECTORY_BUILDER_2D.use_imu_data = true -- false to disable the use of IMU dat
 TRAJECTORY_BUILDER_2D.min_z = -100.
 TRAJECTORY_BUILDER_2D.max_z = 100.
 TRAJECTORY_BUILDER_2D.max_range = 200.0
-TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.25
+TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.1
 
 -- TRAJECTORY_BUILDER_2D.pose_extrapolator: params for combining the CVMM with IMU and odom to extrapolate poses before matching
 -- NOTE: use_imu_based = true is NOT supported in 2D — local_trajectory_builder_2d.cc has a hard CHECK(!use_imu_based). IMU is still used via use_imu_data = true.
 -- TRAJECTORY_BUILDER_2D.pose_extrapolator.use_imu_based = false -- NB imu_based is NOT USED IN 2D
-TRAJECTORY_BUILDER_2D.pose_extrapolator.constant_velocity.imu_gravity_time_constant = 9.81
-TRAJECTORY_BUILDER_2D.pose_extrapolator.constant_velocity.pose_queue_duration = 0.5
+TRAJECTORY_BUILDER_2D.pose_extrapolator.constant_velocity.imu_gravity_time_constant = 10.
+TRAJECTORY_BUILDER_2D.pose_extrapolator.constant_velocity.pose_queue_duration = 0.001
 
 -- TRAJECTORY_BUILDER_2D.ceres_scan_matcher
--- TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 80.0
--- TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 1.0
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 5.
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 80.
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 5
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 6
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 10.
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 8.
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 5.
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 20
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 4
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 1.
 
 -- TRAJECTORY_BUILDER_2D.adaptive_voxel_filter
 -- calculated from measurements from rosbag in Munich.
-TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 50
+TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 100
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_range = 200.0
-TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 0.5
+TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 1.0
 
 -- TRAJECTORY_BUILDER_2D.submaps
 TRAJECTORY_BUILDER_2D.submaps.num_range_data = 100
-TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.25
+TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.1
 TRAJECTORY_BUILDER_2D.submaps.range_data_inserter.probability_grid_range_data_inserter.hit_probability = 0.55
 TRAJECTORY_BUILDER_2D.submaps.range_data_inserter.probability_grid_range_data_inserter.miss_probability = 0.48
 
