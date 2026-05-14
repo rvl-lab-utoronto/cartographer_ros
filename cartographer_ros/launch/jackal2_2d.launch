@@ -15,6 +15,8 @@
 -->
 
 <launch>
+  <arg name="city" default="Toronto" />
+
   <!-- These are removed because we are using /tf messages. -->
   <!-- <param name="robot_description"
     textfile="$(find cartographer_ros)/urdf/jackal.urdf.xacro" />
@@ -27,11 +29,12 @@
   <!-- start from patchworkpp launch/demo.launch -->
   <!-- <include file="$(find patchworkpp)/launch/demo.launch" /> -->
 
-  <node name="cartographer_node" pkg="cartographer_ros"
-      type="cartographer_node" args="
-          -configuration_directory $(find cartographer_ros)/configuration_files
-          -configuration_basename jackal2_2d_liveslam_outdoor.lua"
-      output="screen" launch-prefix="nice -n -10">
+  <group if="$(eval arg('city') == 'Munich')">
+    <node name="cartographer_node" pkg="cartographer_ros"
+        type="cartographer_node" args="
+            -configuration_directory $(find cartographer_ros)/configuration_files
+            -configuration_basename jackal2_2d_liveslam_munich.lua"
+        output="screen" launch-prefix="nice -n -10">
     <!-- <remap from="points2" to="ouster/points" /> -->
     <!-- <remap from="scan" to="ouster/scan" /> -->
     <!-- <remap from="imu" to="imu/data" />   -->
@@ -61,12 +64,26 @@
     <remap from="points2" to="filtered_point_cloud2" />
     <!-- <remap from="points2" to="ouster/points" /> -->
   <!-- <remap from="imu" to="ouster/imu"/> -->
-  <!-- <remap from="odom" to="/jackal_velocity_controller/odom" /> -->
-  <remap from="odom" to="/odom_2d" />
+  <remap from="odom" to="/jackal_velocity_controller/odom" />
+  <!-- <remap from="odom" to="/odom_2d" /> -->
 
     <!-- This remap is only for analysis against other odom sources like vicon -->
     <!-- <remap from="tf" to="tf_cart"/> -->
-  </node>
+    </node>
+  </group>
+
+  <group unless="$(eval arg('city') == 'Munich')">
+    <node name="cartographer_node" pkg="cartographer_ros"
+        type="cartographer_node" args="
+            -configuration_directory $(find cartographer_ros)/configuration_files
+            -configuration_basename jackal2_2d_liveslam_toronto.lua"
+        output="screen" launch-prefix="nice -n -10">
+      <!-- <remap from="imu" to="ouster/imu" /> -->
+      <remap from="imu" to="ouster_imu_debiased" />
+      <remap from="points2" to="filtered_point_cloud2" />
+      <remap from="odom" to="/jackal_velocity_controller/odom"/>
+    </node>
+  </group>
 
   <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
       type="cartographer_occupancy_grid_node" args="-resolution 0.25" launch-prefix="nice -n -5"/>
