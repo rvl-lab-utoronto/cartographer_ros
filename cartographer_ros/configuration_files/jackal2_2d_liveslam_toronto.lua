@@ -90,7 +90,7 @@ TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.1
 -- NOTE: use_imu_based = true is NOT supported in 2D — local_trajectory_builder_2d.cc has a hard CHECK(!use_imu_based). IMU is still used via use_imu_data = true.
 -- TRAJECTORY_BUILDER_2D.pose_extrapolator.use_imu_based = false -- NB imu_based is NOT USED IN 2D
 TRAJECTORY_BUILDER_2D.pose_extrapolator.constant_velocity.imu_gravity_time_constant = 10.
-TRAJECTORY_BUILDER_2D.pose_extrapolator.constant_velocity.pose_queue_duration = 0.001
+TRAJECTORY_BUILDER_2D.pose_extrapolator.constant_velocity.pose_queue_duration = 0.005
 
 -- TRAJECTORY_BUILDER_2D.ceres_scan_matcher
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 8.
