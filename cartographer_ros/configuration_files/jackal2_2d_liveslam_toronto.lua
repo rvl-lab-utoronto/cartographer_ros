@@ -79,7 +79,7 @@ POSE_GRAPH.global_constraint_search_after_n_seconds = 15.0
 
 -- in order to run real-time? change these from the offline (default) settings
 -- 2–3 : slightly smoother local matches, +CPU/latency; keep 1 if the platform is marginal.
-TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 2
+TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
 TRAJECTORY_BUILDER_2D.use_imu_data = true -- false to disable the use of IMU data
 TRAJECTORY_BUILDER_2D.min_z = -100.
 TRAJECTORY_BUILDER_2D.max_z = 100.

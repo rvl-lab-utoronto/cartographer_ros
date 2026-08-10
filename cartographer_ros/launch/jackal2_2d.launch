@@ -52,6 +52,8 @@
       <!-- <remap from="imu" to="ouster/imu" /> -->
       <remap from="imu" to="ouster_imu_debiased" />
       <remap from="points2" to="filtered_point_cloud2" />
+      <!-- <remap from="points2_1" to="filtered_point_cloud2" /> -->
+      <!-- <remap from="points2_2" to="sam_point_cloud_localization" /> -->
       <remap from="odom" to="/jackal_velocity_controller/odom"/>
     </node>
   </group>
