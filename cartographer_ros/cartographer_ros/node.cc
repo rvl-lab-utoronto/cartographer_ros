@@ -297,13 +297,17 @@ void Node::PublishLocalTrajectoryData(const ::ros::TimerEvent& timer_event) {
               ToGeometryMsgTransform(trajectory_data.local_to_map);
           stamped_transforms.push_back(stamped_transform);
 
-          stamped_transform.header.frame_id =
-              trajectory_data.trajectory_options.odom_frame;
-          stamped_transform.child_frame_id =
-              trajectory_data.trajectory_options.published_frame;
-          stamped_transform.transform = ToGeometryMsgTransform(
-              tracking_to_local * (*trajectory_data.published_to_tracking));
-          stamped_transforms.push_back(stamped_transform);
+          // Suppressed when an external filter owns odom->published_frame
+          // (see NodeOptions::publish_odom_to_published_frame).
+          if (node_options_.publish_odom_to_published_frame) {
+            stamped_transform.header.frame_id =
+                trajectory_data.trajectory_options.odom_frame;
+            stamped_transform.child_frame_id =
+                trajectory_data.trajectory_options.published_frame;
+            stamped_transform.transform = ToGeometryMsgTransform(
+                tracking_to_local * (*trajectory_data.published_to_tracking));
+            stamped_transforms.push_back(stamped_transform);
+          }
 
           tf_broadcaster_.sendTransform(stamped_transforms);
         } else {
@@ -317,9 +321,20 @@ void Node::PublishLocalTrajectoryData(const ::ros::TimerEvent& timer_event) {
       }
       if (node_options_.publish_tracked_pose) {
         ::geometry_msgs::PoseStamped pose_msg;
-        pose_msg.header.frame_id = node_options_.map_frame;
+        if (node_options_.publish_tracked_pose_in_odom &&
+            trajectory_data.trajectory_options.provide_odom_frame) {
+          // RAW local scan-match result: pose of the TRACKING frame (os_imu) in
+          // the odom frame, with no published_to_tracking baked in. Consumers own
+          // the tracking->published_frame conversion via tf_static; SLAM reports
+          // only the frame it actually estimates.
+          pose_msg.header.frame_id =
+              trajectory_data.trajectory_options.odom_frame;
+          pose_msg.pose = ToGeometryMsgPose(tracking_to_local);
+        } else {
+          pose_msg.header.frame_id = node_options_.map_frame;
+          pose_msg.pose = ToGeometryMsgPose(tracking_to_map);
+        }
         pose_msg.header.stamp = stamped_transform.header.stamp;
-        pose_msg.pose = ToGeometryMsgPose(tracking_to_map);
         tracked_pose_publisher_.publish(pose_msg);
       }
     }

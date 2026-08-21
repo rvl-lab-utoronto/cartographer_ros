@@ -28,13 +28,27 @@ options = {
                              -- setting this to true when published_frame is also odom gives errors.
   publish_frame_projected_to_2d = true, -- the published pose data is strictly in 2D (x, y, yaw) if this is set to true.
                                          -- This prevents potentially unwanted out-of-plane poses in 2D mode that can occur due to the pose extrapolation step
-  use_pose_extrapolator = true,
+
+  -- VALIDATED (field 2026-08-21; added 2026-08-13): extrapolator OFF. Poses/TF are published only at scan-match
+  -- times, stamped at scan time, carrying the raw scan-match result. Pose extrapolation is
+  -- now owned by robot_tracker_cpp's EKF, which fuses /tracked_pose and publishes
+  -- odom->base_link itself (publish_tf in robot_tracker_cpp_toronto.yaml). Revert: flip
+  -- these three keys back (true / true / false) and disable publish_tf in that yaml.
+  use_pose_extrapolator = false,
   use_odometry = true, -- provide odometry topic in launch file
   use_nav_sat = false,
   use_landmarks = false,
 
-  publish_tracked_pose = true, -- publish the pose of the robot in the odom frame
-  publish_to_tf = true, -- publish a tf between map_frame and published_frame
+  publish_tracked_pose = true,
+  publish_tracked_pose_in_odom = true, -- fork option: /tracked_pose = RAW scan-match pose,
+                                       -- os_imu (tracking frame) in ODOM, not os_imu in map.
+                                       -- No published_to_tracking baked in: the consumer
+                                       -- (robot_tracker_cpp) composes os_imu->base_link
+                                       -- from tf_static itself
+  publish_to_tf = true,
+  publish_odom_to_published_frame = false, -- fork option: keep publishing map->odom (the
+                                           -- pose-graph correction) but NOT odom->base_link,
+                                           -- which the EKF in robot_tracker_cpp now owns
 
   num_laser_scans = 0,
   num_multi_echo_laser_scans = 0,

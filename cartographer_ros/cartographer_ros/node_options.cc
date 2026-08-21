@@ -52,6 +52,14 @@ NodeOptions CreateNodeOptions(
     options.use_pose_extrapolator =
         lua_parameter_dictionary->GetBool("use_pose_extrapolator");
   }
+  if (lua_parameter_dictionary->HasKey("publish_odom_to_published_frame")) {
+    options.publish_odom_to_published_frame =
+        lua_parameter_dictionary->GetBool("publish_odom_to_published_frame");
+  }
+  if (lua_parameter_dictionary->HasKey("publish_tracked_pose_in_odom")) {
+    options.publish_tracked_pose_in_odom =
+        lua_parameter_dictionary->GetBool("publish_tracked_pose_in_odom");
+  }
   return options;
 }
 

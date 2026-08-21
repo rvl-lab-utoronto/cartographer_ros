@@ -38,6 +38,16 @@ struct NodeOptions {
   bool publish_to_tf = true;
   bool publish_tracked_pose = false;
   bool use_pose_extrapolator = true;
+  // When provide_odom_frame is on, publish_to_tf normally sends BOTH map->odom and
+  // odom->published_frame. Setting this false keeps map->odom (the pose-graph
+  // correction, computed purely internally) but suppresses odom->published_frame,
+  // for setups where an external filter (robot_tracker_cpp) owns that transform.
+  bool publish_odom_to_published_frame = true;
+  // Publish tracked_pose as the RAW local scan-match pose: the TRACKING frame
+  // (e.g. os_imu) in the ODOM frame, instead of the tracking frame's pose in the
+  // map frame. Requires provide_odom_frame. No published_to_tracking is baked in:
+  // the consumer converts tracking->published_frame itself via tf_static.
+  bool publish_tracked_pose_in_odom = false;
 };
 
 NodeOptions CreateNodeOptions(
