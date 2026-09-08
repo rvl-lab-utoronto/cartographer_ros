@@ -77,6 +77,12 @@ class Node {
   ::ros::WallTimer occupancy_grid_publisher_timer_;
   std::string last_frame_id_;
   ros::Time last_timestamp_;
+  // Repaint only when a slice was added, removed, re-fetched or moved since
+  // the last paint; otherwise republish the cached grid. Painting every
+  // submap of a large frozen map each period (the stock behaviour) cost a
+  // full core in localization (2026-09-08), where nothing in it changes.
+  bool dirty_ GUARDED_BY(mutex_) = true;
+  std::unique_ptr<nav_msgs::OccupancyGrid> last_msg_ GUARDED_BY(mutex_);
 };
 
 Node::Node(const double resolution, const double publish_period_sec)
@@ -120,8 +126,14 @@ void Node::HandleSubmapList(
         (!submap_msg.is_frozen && !FLAGS_include_unfrozen_submaps)) {
       continue;
     }
+    const bool is_new = submap_slices_.count(id) == 0;
     SubmapSlice& submap_slice = submap_slices_[id];
-    submap_slice.pose = ToRigid3d(submap_msg.pose);
+    const auto pose = ToRigid3d(submap_msg.pose);
+    if (is_new || !submap_slice.pose.translation().isApprox(pose.translation()) ||
+        !submap_slice.pose.rotation().isApprox(pose.rotation())) {
+      dirty_ = true;
+    }
+    submap_slice.pose = pose;
     submap_slice.metadata_version = submap_msg.submap_version;
     if (submap_slice.surface != nullptr &&
         submap_slice.version == submap_msg.submap_version) {
@@ -134,6 +146,7 @@ void Node::HandleSubmapList(
       continue;
     }
     CHECK(!fetched_textures->textures.empty());
+    dirty_ = true;
     submap_slice.version = fetched_textures->version;
 
     // We use the first texture only. By convention this is the highest
@@ -154,6 +167,7 @@ void Node::HandleSubmapList(
   // Delete all submaps that didn't appear in the message.
   for (const auto& id : submap_ids_to_delete) {
     submap_slices_.erase(id);
+    dirty_ = true;
   }
 
   last_timestamp_ = msg->header.stamp;
@@ -165,10 +179,15 @@ void Node::DrawAndPublish(const ::ros::WallTimerEvent& unused_timer_event) {
   if (submap_slices_.empty() || last_frame_id_.empty()) {
     return;
   }
-  auto painted_slices = PaintSubmapSlices(submap_slices_, resolution_);
-  std::unique_ptr<nav_msgs::OccupancyGrid> msg_ptr = CreateOccupancyGridMsg(
-      painted_slices, resolution_, last_frame_id_, last_timestamp_);
-  occupancy_grid_publisher_.publish(*msg_ptr);
+  if (dirty_ || last_msg_ == nullptr) {
+    auto painted_slices = PaintSubmapSlices(submap_slices_, resolution_);
+    last_msg_ = CreateOccupancyGridMsg(painted_slices, resolution_,
+                                       last_frame_id_, last_timestamp_);
+    dirty_ = false;
+  } else {
+    last_msg_->header.stamp = last_timestamp_;
+  }
+  occupancy_grid_publisher_.publish(*last_msg_);
 }
 
 }  // namespace
