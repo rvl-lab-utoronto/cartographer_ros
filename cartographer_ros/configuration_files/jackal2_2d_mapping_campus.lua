@@ -23,4 +23,18 @@ TRAJECTORY_BUILDER.pure_localization_trimmer = nil
 POSE_GRAPH.overlapping_submaps_trimmer_2d = nil
 POSE_GRAPH.optimize_every_n_nodes = 90
 
+-- Threads (2026-09-11): offline only, sized to sep-ws (12 logical CPUs). The
+-- live lua keeps 6/4/4/4 for the robot.
+--  * num_background_threads: the constraint-search pool, the main win here.
+--  * optimization_problem stays at 4: measured on the c01 trim pass
+--    (2026-09-11), 12 Ceres threads cost +3.7 GB peak RSS (2.0 -> 5.8 GB)
+--    for no speedup (32 s vs 36 s). Memory is the binding constraint here.
+--  * constraint_builder ceres_scan_matcher stays at 1: each refinement runs
+--    INSIDE a background thread, so 12 x 12 would oversubscribe to 144.
+--  * local ceres_scan_matcher runs alone on the main thread: safe at 12.
+MAP_BUILDER.num_background_threads = 12
+POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 4
+POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 1
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 12
+
 return options

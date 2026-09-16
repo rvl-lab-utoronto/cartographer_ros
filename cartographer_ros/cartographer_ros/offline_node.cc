@@ -25,6 +25,9 @@
 
 #include <chrono>
 
+#include <cmath>
+#include <string>
+
 #include "absl/strings/str_split.h"
 #include "cartographer_ros/node.h"
 #include "cartographer_ros/playable_bag.h"
@@ -71,6 +74,14 @@ DEFINE_string(save_state_filename, "",
 DEFINE_bool(keep_running, false,
             "Keep running the offline node after all messages from the bag "
             "have been processed.");
+DEFINE_string(
+    initial_trajectory_poses, "",
+    "Comma-separated list of initial poses for bags, each formatted as "
+    "bag_index:to_trajectory_id:timestamp_ticks:x:y:yaw_deg . Places a bag's "
+    "trajectory frame relative to an already-loaded trajectory at a given "
+    "time, instead of leaving it unanchored. This both seeds the pose and "
+    "marks the new trajectory as connected, so constraint search uses the "
+    "local prior-guided matcher rather than the global one.");
 DEFINE_double(skip_seconds, 0,
               "Optional amount of seconds to skip from the beginning "
               "(i.e. when the earliest bag starts.). ");
@@ -115,6 +126,35 @@ void RunOfflineNode(const MapBuilderFactory& map_builder_factory) {
   }
   if (bag_filenames.size() > 0) {
     CHECK_EQ(bag_trajectory_options.size(), bag_filenames.size());
+  }
+
+  // Seed selected bags' trajectories at a known pose relative to an existing
+  // trajectory (see -initial_trajectory_poses).
+  const std::vector<std::string> initial_pose_specs = absl::StrSplit(
+      FLAGS_initial_trajectory_poses, ',', absl::SkipEmpty());
+  for (const std::string& spec : initial_pose_specs) {
+    const std::vector<std::string> f = absl::StrSplit(spec, ':');
+    CHECK_EQ(f.size(), 6u) << "bad -initial_trajectory_poses entry: " << spec;
+    const size_t bag_index = std::stoul(f[0]);
+    CHECK_LT(bag_index, bag_trajectory_options.size());
+    const double yaw_rad = std::stod(f[5]) * M_PI / 180.0;
+    auto* const pose = bag_trajectory_options.at(bag_index)
+                           .trajectory_builder_options
+                           .mutable_initial_trajectory_pose();
+    pose->set_to_trajectory_id(std::stoi(f[1]));
+    pose->set_timestamp(std::stoll(f[2]));
+    auto* const t = pose->mutable_relative_pose()->mutable_translation();
+    t->set_x(std::stod(f[3]));
+    t->set_y(std::stod(f[4]));
+    t->set_z(0.);
+    auto* const r = pose->mutable_relative_pose()->mutable_rotation();
+    r->set_w(std::cos(yaw_rad / 2.));
+    r->set_x(0.);
+    r->set_y(0.);
+    r->set_z(std::sin(yaw_rad / 2.));
+    LOG(INFO) << "Seeding bag " << bag_index << " relative to trajectory "
+              << f[1] << " at t=" << f[2] << " with (" << f[3] << ", " << f[4]
+              << ", " << f[5] << " deg)";
   }
 
   // Since we preload the transform buffer, we should never have to wait for a
