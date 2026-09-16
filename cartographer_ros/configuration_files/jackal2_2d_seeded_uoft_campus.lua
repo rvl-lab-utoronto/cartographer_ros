@@ -11,7 +11,7 @@
 -- With global_sampling_ratio = 0 only the prior-guided local matcher can fire,
 -- so a seeded trajectory can gain genuine nearby evidence but cannot be
 -- teleported by a far-away false match.
-include "jackal2_2d_mapping_campus.lua"
+include "jackal2_2d_mapping_uoft_campus.lua"
 
 POSE_GRAPH.global_sampling_ratio = 0.
 POSE_GRAPH.global_constraint_search_after_n_seconds = 1e9

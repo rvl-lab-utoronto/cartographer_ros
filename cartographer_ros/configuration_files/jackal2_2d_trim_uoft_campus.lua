@@ -11,7 +11,7 @@
 -- keep the fresh_submaps_count freshest submaps; drop any submap left with
 -- less than min_covered_area m^2 of such cells. Freshest = latest node time,
 -- so the most recent traversal of each area survives.
-include "jackal2_2d_mapping_campus.lua"
+include "jackal2_2d_mapping_uoft_campus.lua"
 
 POSE_GRAPH.overlapping_submaps_trimmer_2d = {
   fresh_submaps_count = 2,
