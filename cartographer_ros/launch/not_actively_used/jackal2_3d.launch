@@ -1,71 +1,20 @@
-<!--
-  Copyright 2016 The Cartographer Authors
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
--->
-
 <launch>
-  <!-- These are removed because we are using /tf messages. -->
-  <!-- <param name="robot_description"
-    textfile="$(find cartographer_ros)/urdf/jackal.urdf.xacro" />
-
-  <node name="robot_state_publisher" pkg="robot_state_publisher"
-    type="robot_state_publisher" /> -->
-  <!-- include the laptop bridge launch file to run the decompression   -->
-  <!-- start src/slam_jackal/scripts/ouster_range_to_pc.py -->
-  <!-- <node pkg="slam_jackal" type="ouster_range_to_pc.py" name="ouster_range_to_pc" output="screen"/> -->
-  <!-- start from patchworkpp launch/demo.launch -->
-  <!-- <include file="$(find patchworkpp)/launch/demo.launch" /> -->
+  <!-- 3D mirror of jackal2_2d.launch, Toronto only (no Munich 3D lua exists).
+       NOT ACTIVELY USED: field-tested 2026-08-28 and validated to NOT work
+       well; kept for reference. Same remaps and downstream contract as the
+       2D node. -->
+  <arg name="city" default="Toronto" />
 
   <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
-          -configuration_directory $(find cartographer_ros)/configuration_files
-          -configuration_basename jackal2_3d_liveslam_outdoor.lua"
-      output="screen">
-    <!-- <remap from="points2" to="ouster/points" /> -->
-    <!-- <remap from="scan" to="ouster/scan" /> -->
-    <!-- <remap from="imu" to="imu/data" />   -->
-    <!-- <remap from="odom" to="odometry/filtered" /> -->
-    <!-- <remap from="points2" to="ouster/points" /> -->
-    <!-- <remap from="scan" to="ouster/scan" /> -->
-    <!-- <remap from="imu" to="imu/data" /> -->
-    <!-- <remap from="imu" to="ouster/imu" /> -->
-    <!-- <remap from="imu" to="imu_2d" /> -->
-    <!-- <remap from="odom" to="odometry/filtered" /> -->
-    <!-- <remap from="odom" to="odom_2d" /> -->
-    <!-- This remap is only for analysis against other odom sources like vicon -->
-    <!--  <remap from="tf" to="tf_cart"/> -->
-    <!-- <remap from="points2_1" to="ouster/points" />
-    <remap from="points2_2" to="ouster/points2" />
-    <remap from="scan_1" to="ouster/scan" />
-    <remap from="scan_2" to="ouster/scan2" /> -->
-    <!-- <remap from="points2" to="ouster/points" />
-    <remap from="scan" to="ouster/scan" /> -->
-    <!-- <remap from="imu" to="/imu_ordered" /> -->
-    <!-- <remap from="imu" to="imu_2d" /> -->
-    <!-- <remap from="imu" to="ouster/imu" /> -->
+          -configuration_directory $(find cartographer_ros)/configuration_files/not_actively_used
+          -configuration_basename jackal2_3d_liveslam_toronto.lua"
+      output="screen" launch-prefix="nice -n -10">
     <remap from="imu" to="ouster_imu_debiased" />
-    <!-- <remap from="odom" to="odometry/filtered" /> -->
-    <!-- <remap from="odom" to="odom_2d" /> -->
-    <remap from="points2" to="patchwork/non_ground" />
-    <!-- <remap from="points2" to="ouster/points" /> -->
-  <!-- <remap from="imu" to="ouster/imu"/> -->
-  <remap from="odom" to="/jackal_velocity_controller/odom" />
-
-    <!-- This remap is only for analysis against other odom sources like vicon -->
-    <!-- <remap from="tf" to="tf_cart"/> -->
+    <remap from="points2" to="filtered_point_cloud2" />
+    <remap from="odom" to="/jackal_velocity_controller/odom"/>
   </node>
 
   <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
-      type="cartographer_occupancy_grid_node" args="-resolution 0.25" />
+      type="cartographer_occupancy_grid_node" args="-resolution 0.2" launch-prefix="nice -n -5"/>
 </launch>

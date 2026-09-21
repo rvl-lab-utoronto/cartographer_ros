@@ -22,8 +22,51 @@
 include "jackal2_2d_liveslam_toronto.lua"
 
 -- Live trajectory only. The loaded map is frozen and untouched by this.
+--
+-- keep_uncovered (fork 2026-09-21) is what makes this both things at once. The
+-- stock trimmer drops every live submap except the last max_submaps_to_keep,
+-- wherever it is, so driving off the stored map builds territory and then
+-- throws it away. With this set, a live submap is spared when the nodes
+-- inserted into it reach ground the FROZEN trajectories never drove, so:
+--   on the stored map  -> nothing is spared, the live trajectory stays capped
+--                         at 5 submaps and the CPU profile below is unchanged;
+--   off the stored map -> the submaps survive and the run maps like it did
+--                         before there was a map.
+-- Coverage is the frozen nodes' positions dilated by coverage_radius, built
+-- ONCE on the first trim (one pass over the loaded nodes), then a lookup.
+-- Spared live submaps are folded into it, so a second pass over the same new
+-- ground is trimmed rather than stacking another copy of it.
+--
+-- coverage_radius 12 m: how far off the old path still counts as mapped. It is
+-- NOT the sensor range. Too large and a genuine excursion is mistaken for
+-- covered ground and discarded; too small and driving a parallel sidewalk
+-- re-maps ground that is already good. UNVALIDATED, 12 is a first guess from
+-- the campus corridors being roughly 20 m wide; measure before trusting it.
+--
+-- coverage_resolution 1 m: the question is "has the robot been here", not
+-- where a wall is, so the bitmap is coarse on purpose. At 1 m the campus map
+-- is ~400 kB.
+--
+-- The cost of NOT trimming off-map submaps is that the live graph grows while
+-- off the map, exactly as it did in the pre-map days. That is the intent, but
+-- it is unbounded: a long excursion eventually costs what live SLAM costs.
+-- keep_uncovered is OFF pending a rewrite, 2026-09-21. As first written,
+-- PureLocalizationTrimmer::IsRedundant runs inside Trim, which cartographer
+-- calls WHILE HOLDING THE POSE GRAPH MUTEX, and it is far too expensive to be
+-- there: the first call stamps a disc of ~450 cells for each of ~80k frozen
+-- nodes (~36M operations), and every later call iterates the whole 307k-entry
+-- constraint list TWICE per candidate submap. That is the same shape as the
+-- wedge this file already documents for OverlappingSubmapsTrimmer2D, and it
+-- would starve the constraint builder exactly when the bootstrap needs it.
+-- Not yet proven to be the cause of anything observed; turned off so that the
+-- map change (v2_FINAL2 -> v2_k22_trim) can be tested on its own. Turn it back
+-- on only after the membership lookup is precomputed and the coverage build is
+-- off the critical path.
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
+  keep_uncovered = false,
+  coverage_resolution = 1.,
+  coverage_radius = 12.,
 }
 
 -- ===================================================================
@@ -53,6 +96,41 @@ TRAJECTORY_BUILDER.pure_localization_trimmer = {
 -- here anyway: frozen submaps are never trimmed and pure_localization_trimmer
 -- already caps the live trajectory.
 POSE_GRAPH.overlapping_submaps_trimmer_2d = nil
+
+-- ===================================================================
+-- Local SLAM: the offline-tuned front end the map was built with.
+-- ===================================================================
+-- These three are the result of the tuning study in
+-- chunks/TUNING_README.md and are set by jackal2_2d_mapping_uoft_campus.lua
+-- (lines 60-62), which is offline-only and therefore must not be inherited
+-- here. Without repeating them, localization silently ran the PRE-tuning live
+-- values (8 / 5 / 100), because this file includes the live lua directly.
+-- Added 2026-09-21 after that was noticed. OFFLINE VERIFIED, ONLINE
+-- UNVALIDATED: the numbers below are the offline bag-12 measurement, never
+-- run live.
+--
+-- Measured on bag 12 (08-21 16:41, the only bag with a 562 m loop), drift at
+-- revisit before any optimization:
+--   translation_weight 8 (live)      9.4 m   = 1.7 % of distance driven
+--   translation_weight 0.5           1.17 m  (flat bottom: 0.4 -> 1.17, 0.6 -> 1.38)
+--   + rotation_weight 1              0.92 m
+--   + submaps.num_range_data 40      0.40 m  = 0.07 %
+-- The mechanism is this robot's ~14 % wheel-odometry scale error: the stock
+-- translation_weight pulls the scan matcher toward that bad prediction. In
+-- MAPPING that showed up as loop error. In LOCALIZATION the same pull fights
+-- the frozen map between constraints, so the pose drifts further than it needs
+-- to and each correction arrives as a larger visible jump.
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 0.5   -- live 8
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight    = 1.    -- live 5
+
+-- 40, matching the map. The frozen submaps in this map ARE 40-scan submaps, so
+-- this also makes the live submaps the same size as the ones they are matched
+-- against. Note it invalidates the "one num_range_data (100 scans, ~15 m)"
+-- figure quoted in the max_constraint_distance comment below: at 40 the origins
+-- of the FROZEN submaps are ~6 m of driving apart, which is consistent with the
+-- measured p50 nearest-origin distance of 2.54 m rather than at odds with it.
+-- It also means live submaps finish sooner, so the trimmer fires more often.
+TRAJECTORY_BUILDER_2D.submaps.num_range_data = 40                   -- live 100
 
 -- ===================================================================
 -- Bootstrap: wide search right after the rviz click, then narrow.
@@ -187,7 +265,33 @@ POSE_GRAPH.optimize_every_n_nodes = 10
 -- LOST: automatic re-localization after a kidnap, and recovery after driving
 -- off the map. Re-click instead. Re-enable moderately (60 s, 0.001) once the
 -- CPU is confirmed low.
-POSE_GRAPH.global_constraint_search_after_n_seconds = 1e6
+-- 2026-09-21: WAS 1e6, and that is why the initial pose was never corrected.
+-- This value does NOT disable the global search. Read pose_graph_2d.cc
+-- ComputeConstraint: the LOCAL search is used when
+--     same trajectory  OR  node_time < last_connection_time + THIS
+-- and only otherwise does it fall through to the global sampler. For a freshly
+-- started live trajectory, last_connection_time against every frozen
+-- trajectory is a default-constructed common::Time (year 1), because
+-- TrajectoryConnectivityState::LastConnectionTime is a std::map lookup on a
+-- missing key. Node time is ~6.4e17 ticks (2026); 1e6 s is 1e13 ticks. The
+-- comparison is false for every frozen submap, forever.
+--
+-- So 1e6 made the LOCAL branch unreachable, not the global one. The bootstrap
+-- above only bypasses the per-submap sampler INSIDE that local branch, so it
+-- could never fire either. The sole remaining path was the global sampler at
+-- global_sampling_ratio 0.0001, i.e. effectively nothing, so no constraint was
+-- ever formed, ConnectAlsoToAllFrozen was never reached, and the map->odom
+-- stayed at whatever the rviz click said while the live submaps drifted off by
+-- exactly that error. Measured 2026-09-21: 199 live nodes, 8 frozen submaps
+-- within max_constraint_distance of the robot, and "0 computations resulted in
+-- 0 additional constraints" for the whole run.
+--
+-- 1e11 seconds is ~1e18 ticks: larger than any node time, so the local branch
+-- is always taken, which is what this file wanted all along ("the local search
+-- keeps it connected"). Still comfortably inside int64. The global search is
+-- disabled by global_sampling_ratio below, which is the knob that actually
+-- does that.
+POSE_GRAPH.global_constraint_search_after_n_seconds = 1e11
 POSE_GRAPH.global_sampling_ratio = 0.0001
 
 return options

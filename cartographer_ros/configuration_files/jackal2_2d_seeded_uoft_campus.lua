@@ -16,4 +16,16 @@ include "jackal2_2d_mapping_uoft_campus.lua"
 POSE_GRAPH.global_sampling_ratio = 0.
 POSE_GRAPH.global_constraint_search_after_n_seconds = 1e9
 
+-- Lock-on bootstrap (cartographer 6008854; 2026-09-17 19:20, kept after global tuning). A seed is
+-- only an initial value, and with global search off a pair of trajectories that has never been
+-- connected gets NO cross-trajectory search at all (pose_graph_2d.cc: local search needs a prior
+-- connection). So the bootstrap is the only way in: every finished submap within
+-- max_constraint_distance is matched on every node, windowed, until the first cross-trajectory
+-- constraint. Measured on bag 2 seeded onto bag 1 (tune_global/baseline): locks within seconds,
+-- 4335 cross-bag closures, residual median 0.011 m, 94 % of bag 2's walls within 0.2 m of bag 1's.
+POSE_GRAPH.constraint_builder.initial_pose_num_nodes = 100000     -- whole bag; ends at the first cross-bag constraint
+POSE_GRAPH.constraint_builder.initial_pose_linear_search_window = 15.
+POSE_GRAPH.constraint_builder.initial_pose_angular_search_window = math.rad(30.)
+POSE_GRAPH.constraint_builder.initial_pose_min_score = 0.55
+
 return options
