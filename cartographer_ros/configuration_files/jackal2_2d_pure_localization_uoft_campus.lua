@@ -50,23 +50,28 @@ include "jackal2_2d_liveslam_toronto.lua"
 -- The cost of NOT trimming off-map submaps is that the live graph grows while
 -- off the map, exactly as it did in the pre-map days. That is the intent, but
 -- it is unbounded: a long excursion eventually costs what live SLAM costs.
--- keep_uncovered is OFF pending a rewrite, 2026-09-21. As first written,
--- PureLocalizationTrimmer::IsRedundant runs inside Trim, which cartographer
--- calls WHILE HOLDING THE POSE GRAPH MUTEX, and it is far too expensive to be
--- there: the first call stamps a disc of ~450 cells for each of ~80k frozen
--- nodes (~36M operations), and every later call iterates the whole 307k-entry
--- constraint list TWICE per candidate submap. That is the same shape as the
--- wedge this file already documents for OverlappingSubmapsTrimmer2D, and it
--- would starve the constraint builder exactly when the bootstrap needs it.
--- Not yet proven to be the cause of anything observed; turned off so that the
--- map change (v2_FINAL2 -> v2_k22_trim) can be tested on its own. Turn it back
--- on only after the membership lookup is precomputed and the coverage build is
--- off the critical path.
+-- Cost note: IsRedundant runs under the pose graph mutex. The coverage build
+-- is one pass over the frozen nodes on the first trim, and each NEW candidate
+-- costs one pass over the constraint list; spared submaps are never
+-- re-tested. Measured 2026-09-22 with it on: no visible effect on the node.
+-- keep_uncovered ON (user, 2026-09-22). Two bugs in the first implementation
+-- made it look like it did nothing (5 of 73 live submaps survived a drive off
+-- the map): a spared submap was re-tested on the next pass, found its OWN
+-- folded-in nodes and was trimmed; and the fold-in used the 12 m
+-- coverage_radius, which made the next consecutive submap redundant. Fixed
+-- the same day: spared submaps are remembered for the run, and the fold-in
+-- uses keep_radius below.
+--
+-- keep_radius 3 m: "this run already drove exactly here". A submap that
+-- continues along new ground is 6 m further on and outside it, so it is kept;
+-- a second pass down the same new sidewalk is inside it, so it is trimmed.
+-- UNVALIDATED on the robot.
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
-  keep_uncovered = false,
+  keep_uncovered = true,
   coverage_resolution = 1.,
   coverage_radius = 12.,
+  keep_radius = 3.,
 }
 
 -- ===================================================================
@@ -228,16 +233,23 @@ TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 1
 -- ===================================================================
 -- Front end insertion.
 -- ===================================================================
--- No free space insertion in the LIVE submaps. Nothing consumes it in
--- localization: the front end ceres match and the constraint search only read
--- hit cells (unknown and free score the same). Stock true makes CastRays walk
--- origin->hit for EVERY return into BOTH active submaps, cost ~ sum(ray length)
--- / resolution. Outdoors at max_range 200 on a 0.1 m grid that is the dominant
--- per scan cost, and when a scan exceeds the 100 ms budget the single threaded
--- cartographer_ros spinner holds the node mutex, so /tracked_pose, map->odom
--- and the publish timer all fall behind, robot_tracker mutes and the MPC gate
--- closes. Insertion becomes 2 x N hit updates.
-TRAJECTORY_BUILDER_2D.submaps.range_data_inserter.probability_grid_range_data_inserter.insert_free_space = false
+-- FREE SPACE INSERTION ON, field-validated 2026-09-22 (user): with it on the
+-- cartographer CPU is fine and localization is VISIBLY better. It was false
+-- here from 2026-09 to 2026-09-22 on the strength of a theory, written by
+-- Claude, that turned out to be wrong on both counts:
+--   * "nothing consumes free space in localization; unknown and free score
+--     the same" is false. The front-end ceres scan matcher scores every point
+--     against the submap's probability grid, and a point that lands on a cell
+--     the submap knows to be FREE costs far more than one landing on an
+--     unknown cell (p ~0.1 against p 0.5). Free space is what makes a
+--     misaligned scan look wrong, so it sharpens the match; without it the
+--     matcher only ever sees hits and slides along walls.
+--   * "CastRays makes it the dominant per-scan cost and stalls the node" did
+--     not happen when measured. Keep it on.
+-- Side effects that come with it: live submaps render free space (white) in
+-- /map, and freshly driven off-map ground becomes KNOWN in /map_padded, so the
+-- planner's unknown_block no longer treats it as unknown.
+TRAJECTORY_BUILDER_2D.submaps.range_data_inserter.probability_grid_range_data_inserter.insert_free_space = true
 
 -- A parked robot makes a node only every max_time_seconds, and the snap after a
 -- click needs nodes (constraint attempts) plus optimize_every_n_nodes of them
