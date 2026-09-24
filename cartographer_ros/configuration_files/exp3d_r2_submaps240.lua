@@ -1,4 +1,4 @@
--- 3D LOCAL sweep round 2, variant 'osw_5_30' (2026-09-24). One knob at a time from the TUNED
+-- 3D LOCAL sweep round 2, variant 'submaps240' (2026-09-24). One knob at a time from the TUNED
 -- config, which closes the 534 m loop at 0.28 m big-loop error against the tuned 2D map's
 -- 0.40 m. Run in MAPPING mode (optimize_every_n_nodes 90, default sampling 0.3), not the
 -- global-SLAM-off tuning mode: it is 13x faster (2 min vs 27) and it measures the
@@ -6,6 +6,5 @@
 -- isolate local SLAM the way the cartographer guide's protocol asks, so this is a screen.
 -- Whatever wins here gets confirmed in tuning mode before it goes into the lua.
 include "jackal2_3d_mapping_uoft_campus.lua"
-TRAJECTORY_BUILDER_3D.ceres_scan_matcher.occupied_space_weight_0 = 5.
-TRAJECTORY_BUILDER_3D.ceres_scan_matcher.occupied_space_weight_1 = 30.
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 240   -- the other side: 2D was non-monotonic, so sweep both ways
 return options
