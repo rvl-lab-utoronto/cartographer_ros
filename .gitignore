@@ -1,1 +1,6 @@
 *temp*
+
+# local experiment variants and backups (not part of the maintained configs)
+*.bak*
+cartographer_ros/configuration_files/exp3d_lidar_*.lua
+cartographer_ros/configuration_files/exp3d_zr_*.lua
