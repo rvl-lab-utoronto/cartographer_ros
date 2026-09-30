@@ -240,11 +240,20 @@ void Node::PublishLocalTrajectoryData(const ::ros::TimerEvent& timer_event) {
           point_cloud.push_back(cartographer::sensor::ToTimedRangefinderPoint(
               point, 0.f /* time */));
         }
+        // Projected to 2D: draw the scan where the PUBLISHED (planar) robot is, i.e. relative to the
+        // current tracking pose, placed at the projection of its FULL map pose (same rule as the TF below).
+        const Rigid3d& local_pose = trajectory_data.local_slam_data->local_pose;
+        const Rigid3d points_to_map =
+            trajectory_data.trajectory_options.publish_frame_projected_to_2d
+                ? carto::transform::Embed3D(carto::transform::Project2D(
+                      trajectory_data.local_to_map * local_pose)) *
+                      local_pose.inverse()
+                : trajectory_data.local_to_map;
         scan_matched_point_cloud_publisher_.publish(ToPointCloud2Message(
             carto::common::ToUniversal(trajectory_data.local_slam_data->time),
             node_options_.map_frame,
             carto::sensor::TransformTimedPointCloud(
-                point_cloud, trajectory_data.local_to_map.cast<float>())));
+                point_cloud, points_to_map.cast<float>())));
       }
       extrapolator.AddPose(trajectory_data.local_slam_data->time,
                            trajectory_data.local_slam_data->local_pose);
@@ -282,8 +291,20 @@ void Node::PublishLocalTrajectoryData(const ::ros::TimerEvent& timer_event) {
       return tracking_to_local_3d;
     }();
 
-    const Rigid3d tracking_to_map =
-        trajectory_data.local_to_map * tracking_to_local;
+    // Projected to 2D means the PUBLISHED world is planar, so map->odom must be planar too: in 3D
+    // (localization3d) local_to_map carries the map height at the start plus some roll/pitch, and would lift
+    // or tilt the whole robot tree and every ground-level map drawn under it.
+    // It is chosen so that map->odom * (projected local pose) = projection of the FULL map pose
+    // local_to_map * tracking_to_local_3d. Projecting local_to_map on its own (2026-09-30 first version)
+    // dropped its roll/pitch times the local z: measured live 7-11 cm of world-fixed xy error at 1.5-2 m
+    // of climb. In 2D both factors are already planar and this equals local_to_map exactly.
+    const Rigid3d local_to_map =
+        trajectory_data.trajectory_options.publish_frame_projected_to_2d
+            ? carto::transform::Embed3D(carto::transform::Project2D(
+                  trajectory_data.local_to_map * tracking_to_local_3d)) *
+                  tracking_to_local.inverse()
+            : trajectory_data.local_to_map;
+    const Rigid3d tracking_to_map = local_to_map * tracking_to_local;
 
     if (trajectory_data.published_to_tracking != nullptr) {
       if (node_options_.publish_to_tf) {
@@ -293,8 +314,7 @@ void Node::PublishLocalTrajectoryData(const ::ros::TimerEvent& timer_event) {
           stamped_transform.header.frame_id = node_options_.map_frame;
           stamped_transform.child_frame_id =
               trajectory_data.trajectory_options.odom_frame;
-          stamped_transform.transform =
-              ToGeometryMsgTransform(trajectory_data.local_to_map);
+          stamped_transform.transform = ToGeometryMsgTransform(local_to_map);
           stamped_transforms.push_back(stamped_transform);
 
           // Suppressed when an external filter owns odom->published_frame
