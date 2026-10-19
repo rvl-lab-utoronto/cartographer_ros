@@ -96,6 +96,29 @@ Node::Node(
     tf2_ros::Buffer* const tf_buffer, const bool collect_metrics)
     : node_options_(node_options),
       map_builder_bridge_(node_options_, std::move(map_builder), tf_buffer) {
+  // ~log_optimization_delay (default false, diagnostics only): after every global optimization, log the bag/ROS-time delay
+  // between the newest node it covered (of the newest trajectory = the live one) and now, i.e. when the corrected
+  // map->odom becomes publishable. Used to measure the live correction delay during legion bag replays (2026-10-07).
+  {
+    bool log_opt = false; ::ros::NodeHandle("~").param("log_optimization_delay", log_opt, false);
+    if (log_opt) {
+      auto* pg = map_builder_bridge_.pose_graph();
+      pg->SetGlobalSlamOptimizationCallback(
+          [pg](const std::map<int, ::cartographer::mapping::SubmapId>&,
+               const std::map<int, ::cartographer::mapping::NodeId>& last) {
+            if (last.empty()) return;
+            const ::ros::Time now = ::ros::Time::now();
+            const auto& id = last.rbegin()->second;
+            const auto poses = pg->GetTrajectoryNodePoses();
+            if (!poses.Contains(id) || !poses.at(id).constant_pose_data.has_value()) return;
+            const double nt = ToRos(poses.at(id).constant_pose_data.value().time).toSec();
+            LOG(INFO) << std::fixed << "OPT_DELAY trajectory " << id.trajectory_id << " node " << id.node_index
+                      << " node_time " << nt << " now " << now.toSec() << " delay " << now.toSec() - nt;
+          });
+      LOG(INFO) << "log_optimization_delay on";
+    }
+  }
+
   absl::MutexLock lock(&mutex_);
   if (collect_metrics) {
     metrics_registry_ = absl::make_unique<metrics::FamilyFactory>();

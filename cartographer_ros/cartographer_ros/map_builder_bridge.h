@@ -49,6 +49,9 @@ namespace cartographer_ros {
 
 class MapBuilderBridge {
  public:
+  // For optional diagnostics in Node (e.g. ~log_optimization_delay); the pose graph is owned by map_builder_.
+  ::cartographer::mapping::PoseGraphInterface* pose_graph() { return map_builder_->pose_graph(); }
+
   struct LocalTrajectoryData {
     // Contains the trajectory data received from local SLAM, after
     // it had processed accumulated 'range_data_in_local' and estimated
