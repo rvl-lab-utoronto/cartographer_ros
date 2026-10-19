@@ -26,6 +26,11 @@ include "jackal2_3d_pure_localization_uoft_campus.lua"
 POSE_GRAPH.optimization_problem.use_online_imu_extrinsics_in_3d = false
 POSE_GRAPH.optimization_problem.acceleration_weight = 0.
 POSE_GRAPH.optimization_problem.rotation_weight = 0.
+-- Diagnostic logging off (2026-10-19, user: nothing unnecessary runs live): the residual histograms span every
+-- constraint of the frozen map (~377k) after each optimization, the match histograms every constraint batch. Logs
+-- only. UNVALIDATED (live).
+POSE_GRAPH.log_residual_histograms = false
+POSE_GRAPH.constraint_builder.log_matches = false
 
 -- The navigation stack, costmaps and EKF are planar and were built around the 2D mode, which publishes
 -- the projected pose (jackal2_2d_liveslam_toronto.lua). Localize in 6-DoF, publish map->odom and
