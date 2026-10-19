@@ -212,7 +212,8 @@ bool Node::HandleTrajectoryQuery(
 void Node::PublishSubmapList(const ::ros::WallTimerEvent& unused_timer_event) {
   // Fork (2026-10-19): like the trajectory node, landmark and constraint lists, only when someone listens (rviz).
   // Building it walks every submap of every trajectory, 3x a second, which in localization is the whole frozen
-  // map. UNVALIDATED (live).
+  // map. VERIFIED OFFLINE (2026-10-19: legion bag-play; the lockstep loop does not use this node; not yet on the
+  // robot).
   if (submap_list_publisher_.getNumSubscribers() == 0) return;
   absl::MutexLock lock(&mutex_);
   submap_list_publisher_.publish(map_builder_bridge_.GetSubmapList());

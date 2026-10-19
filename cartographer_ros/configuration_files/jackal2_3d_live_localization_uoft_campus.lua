@@ -7,9 +7,10 @@
 include "jackal2_3d_pure_localization_uoft_campus.lua"
 
 -- Pose-graph IMU terms for the live trajectory (2026-10-13, traj_dataset_creation/docs/reports/localization_divergence.md;
--- moved here from the offline lua 2026-10-19, user decision). UNVALIDATED (live): verified only in the offline lockstep loop
--- (Trillium, 28 bags: the 7 diverging bags 0.52-17.2 m -> 0.06-0.15 m xy p95, 18 controls unchanged within a few cm); not yet
--- run live on the robot nor in a legion bag-play replay.
+-- moved here from the offline lua 2026-10-19, user decision). VERIFIED OFFLINE (2026-10-19: lockstep loop + legion bag-play;
+-- not yet on the robot): lockstep loop on 28 bags (the 7 diverging bags 0.52-17.2 m -> 0.06-0.15 m xy p95, controls
+-- unchanged within a few cm), then pass5 on all 88 bags (only R4 map-reference bags and one unexplained 20 s stretch
+-- remain above 0.3 m p95); legion bag-play replays localized and stayed on the map.
 -- 1. Online IMU extrinsics OFF. The tracking frame is os_imu itself, so the live trajectory's IMU calibration is the identity
 --    by construction, but the inherited mapping setting (use_online_imu_extrinsics_in_3d = true) left it free in a problem of
 --    a few hundred nodes: on the first solves (robot parked, gyro deltas ~0) Ceres sent it 110-180 deg away and the gravity
@@ -22,13 +23,15 @@ include "jackal2_3d_pure_localization_uoft_campus.lua"
 --    181 s, 09-22-11-01-49 from 434 s; the recorded and the loop's debiased gyro both read +150 deg over a 30 s straight).
 --    odom_2d's bias_gate_measured (wheels + gyro stillness, on since 2026-10-19) removes the cause. The rotation residual
 --    (1.6e4 / dt, quadratic) then outweighs every map constraint (Huber 1e1, capped to a constant pull) and the optimized yaw
---    follows the gyro: 0.89 -> 0.09 m and 0.53 -> 0.15 m p95 without the terms. Map matches are 6-DoF, so roll/pitch/z stay anchored; local SLAM still uses the IMU as before.
+--    follows the gyro: 0.89 -> 0.09 m and 0.53 -> 0.15 m p95 without the terms. Map matches are 6-DoF, so roll/pitch/z
+--    stay anchored; local SLAM still uses the IMU as before.
 POSE_GRAPH.optimization_problem.use_online_imu_extrinsics_in_3d = false
 POSE_GRAPH.optimization_problem.acceleration_weight = 0.
 POSE_GRAPH.optimization_problem.rotation_weight = 0.
 -- Diagnostic logging off (2026-10-19, user: nothing unnecessary runs live): the residual histograms span every
 -- constraint of the frozen map (~377k) after each optimization, the match histograms every constraint batch. Logs
--- only. UNVALIDATED (live).
+-- only. VERIFIED OFFLINE (2026-10-19: legion bag-play; the lockstep loop has not run with these two lines yet; not yet on
+-- the robot).
 POSE_GRAPH.log_residual_histograms = false
 POSE_GRAPH.constraint_builder.log_matches = false
 
