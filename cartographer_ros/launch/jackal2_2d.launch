@@ -36,8 +36,9 @@
             -configuration_directory $(find cartographer_ros)/configuration_files
             -configuration_basename jackal2_2d_liveslam_munich.lua"
         output="screen" launch-prefix="nice -n -10">
-    <!-- <remap from="imu" to="ouster_imu_debiased" /> -->
-    <remap from="imu" to="ouster/imu" />
+    <!-- debiased Ouster gyro, as Toronto: odom_2d's munich mode (online gyro-bias
+         adaptation) publishes it; was the raw ouster/imu before 2026-10-26 -->
+    <remap from="imu" to="ouster_imu_debiased" />
     <remap from="points2" to="filtered_point_cloud2" />
     <remap from="odom" to="/jackal_velocity_controller/odom" />
     </node>
