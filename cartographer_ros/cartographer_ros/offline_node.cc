@@ -77,7 +77,8 @@ DEFINE_bool(keep_running, false,
 DEFINE_string(
     initial_trajectory_poses, "",
     "Comma-separated list of initial poses for bags, each formatted as "
-    "bag_index:to_trajectory_id:timestamp_ticks:x:y:yaw_deg . Places a bag's "
+    "bag_index:to_trajectory_id:timestamp_ticks:x:y:yaw_deg (or :x:y:z:qw:qx:qy:qz "
+    "for a full 3D relative pose). Places a bag's "
     "trajectory frame relative to an already-loaded trajectory at a given "
     "time, instead of leaving it unanchored. This both seeds the pose and "
     "marks the new trajectory as connected, so constraint search uses the "
@@ -134,27 +135,41 @@ void RunOfflineNode(const MapBuilderFactory& map_builder_factory) {
       FLAGS_initial_trajectory_poses, ',', absl::SkipEmpty());
   for (const std::string& spec : initial_pose_specs) {
     const std::vector<std::string> f = absl::StrSplit(spec, ':');
-    CHECK_EQ(f.size(), 6u) << "bad -initial_trajectory_poses entry: " << spec;
+    // 6 fields: bag_index:to_trajectory_id:timestamp_ticks:x:y:yaw_deg (planar, z 0).
+    // 10 fields: bag_index:to_trajectory_id:timestamp_ticks:x:y:z:qw:qx:qy:qz, the full
+    // relative pose. In 3D the reference pose carries the tracking frame's roll/pitch,
+    // and the new trajectory's local frame is already gravity aligned, so a planar
+    // relative pose tilts the new trajectory by the reference's tilt; the full form
+    // lets the caller cancel it (slam_jackal/maps/munich_2026/mm_seeds.py).
+    CHECK(f.size() == 6u || f.size() == 10u)
+        << "bad -initial_trajectory_poses entry: " << spec;
     const size_t bag_index = std::stoul(f[0]);
     CHECK_LT(bag_index, bag_trajectory_options.size());
-    const double yaw_rad = std::stod(f[5]) * M_PI / 180.0;
     auto* const pose = bag_trajectory_options.at(bag_index)
                            .trajectory_builder_options
                            .mutable_initial_trajectory_pose();
     pose->set_to_trajectory_id(std::stoi(f[1]));
     pose->set_timestamp(std::stoll(f[2]));
     auto* const t = pose->mutable_relative_pose()->mutable_translation();
+    auto* const r = pose->mutable_relative_pose()->mutable_rotation();
     t->set_x(std::stod(f[3]));
     t->set_y(std::stod(f[4]));
-    t->set_z(0.);
-    auto* const r = pose->mutable_relative_pose()->mutable_rotation();
-    r->set_w(std::cos(yaw_rad / 2.));
-    r->set_x(0.);
-    r->set_y(0.);
-    r->set_z(std::sin(yaw_rad / 2.));
+    if (f.size() == 6u) {
+      const double yaw_rad = std::stod(f[5]) * M_PI / 180.0;
+      t->set_z(0.);
+      r->set_w(std::cos(yaw_rad / 2.));
+      r->set_x(0.);
+      r->set_y(0.);
+      r->set_z(std::sin(yaw_rad / 2.));
+    } else {
+      t->set_z(std::stod(f[5]));
+      r->set_w(std::stod(f[6]));
+      r->set_x(std::stod(f[7]));
+      r->set_y(std::stod(f[8]));
+      r->set_z(std::stod(f[9]));
+    }
     LOG(INFO) << "Seeding bag " << bag_index << " relative to trajectory "
-              << f[1] << " at t=" << f[2] << " with (" << f[3] << ", " << f[4]
-              << ", " << f[5] << " deg)";
+              << f[1] << " at t=" << f[2] << " with " << spec;
   }
 
   // Since we preload the transform buffer, we should never have to wait for a
