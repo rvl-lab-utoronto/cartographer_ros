@@ -29,7 +29,7 @@
   <!-- start from patchworkpp launch/demo.launch -->
   <!-- <include file="$(find patchworkpp)/launch/demo.launch" /> -->
 
-  <group if="$(eval arg('city') == 'Munich')">
+  <group if="$(eval arg('city') in ('Munich', 'Vienna'))">
     <!-- <node name="cartographer_node" pkg="cartographer_ros" type="cartographer_node" args=" -configuration_directory $(find cartographer_ros)/configuration_files -configuration_basename jackal2_2d_liveslam_munich.lua" output="screen" launch-prefix="nice -n -10"> -->
     <node name="cartographer_node" pkg="cartographer_ros"
         type="cartographer_node" args="
@@ -44,7 +44,7 @@
     </node>
   </group>
 
-  <group unless="$(eval arg('city') == 'Munich')">
+  <group unless="$(eval arg('city') in ('Munich', 'Vienna'))">
     <node name="cartographer_node" pkg="cartographer_ros"
         type="cartographer_node" args="
             -configuration_directory $(find cartographer_ros)/configuration_files
